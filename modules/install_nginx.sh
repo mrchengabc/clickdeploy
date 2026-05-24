@@ -5,19 +5,51 @@ echo "=========================================="
 echo "  [1/3] Menginstal Nginx di Debian 12...  "
 echo "=========================================="
 
-# Update package list
+# Update daftar paket sistem
 sudo apt update -y
 
-# Install Nginx
+# 1. ANTISIPASI BENTROK: Periksa & matikan Apache jika terpasang bawaan dari OS template VPS
+if systemctl is-active --quiet apache2 || systemctl is-enabled --quiet apache2 2>/dev/null; then
+    echo "⚠️ Mendeteksi Apache2 aktif. Menghentikan Apache2 agar port 80 tidak bentrok..."
+    sudo systemctl stop apache2
+    sudo systemctl disable apache2
+    sudo apt purge apache2 -y
+fi
+
+# 2. Instalasi Nginx
 sudo apt install nginx -y
 
-# Aktifkan dan jalankan Nginx
-sudo systemctl enable nginx
-sudo systemctl start nginx
+# 3. ANTISIPASI ERROR IPv6: Periksa apakah sistem VPS mendukung IPv6
+# Jika tidak mendukung, kita beri komentar (#) pada pengaturan listen IPv6 Nginx agar tidak crash
+if [ ! -f /proc/net/if_inet6 ]; then
+    echo "⚠️ Sistem Anda tidak mendukung IPv6 (dinonaktifkan). Menyesuaikan konfigurasi default Nginx..."
+    if [ -f /etc/nginx/sites-available/default ]; then
+        sudo sed -i 's/listen \[::\]:80/#listen \[::\]:80/g' /etc/nginx/sites-available/default
+    fi
+fi
 
-# Menampilkan status Nginx secara singkat
-if systemctl is-active --quiet nginx; then
-    echo "✔ Nginx berhasil diinstal dan berjalan dengan baik."
+# 4. Verifikasi konfigurasi sebelum mencoba menjalankan service
+echo "Memverifikasi konfigurasi Nginx..."
+if sudo nginx -t; then
+    echo "✔ Konfigurasi valid. Mengaktifkan service Nginx..."
+    sudo systemctl enable nginx
+    sudo systemctl restart nginx
 else
-    echo "❌ Terjadi masalah, Nginx gagal dijalankan."
+    echo "❌ Konfigurasi Nginx bermasalah saat divalidasi!"
+fi
+
+# 5. Verifikasi Akhir & Debugging Otomatis jika gagal
+if systemctl is-active --quiet nginx; then
+    echo "=========================================="
+    echo "✔ SUKSES: Nginx berhasil berjalan dengan baik!"
+    echo "=========================================="
+else
+    echo "=========================================="
+    echo "❌ GAGAL: Nginx tidak dapat dijalankan."
+    echo "Menampilkan detail error langsung ke Anda:"
+    echo "------------------------------------------"
+    sudo nginx -t
+    echo "------------------------------------------"
+    sudo journalctl -n 15 -u nginx --no-pager
+    echo "=========================================="
 fi
