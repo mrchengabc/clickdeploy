@@ -4,6 +4,50 @@
 # Mengambil lokasi absolut dari folder tempat script ini berada
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+# ==========================================
+# FUNGSI CEK UPDATE OTOMATIS DARI GITHUB
+# ==========================================
+check_for_updates() {
+    # Pastikan folder ini merupakan repositori git
+    if [ -d "$DIR/.git" ]; then
+        echo "Memeriksa pembaruan dari GitHub..."
+        
+        # Mengambil informasi perubahan terbaru dari GitHub secara senyap
+        git fetch >/dev/null 2>&1
+        
+        # Mendapatkan ID commit lokal dan remote
+        LOCAL=$(git rev-parse @ 2>/dev/null)
+        REMOTE=$(git rev-parse @{u} 2>/dev/null)
+        
+        if [ "$LOCAL" != "$REMOTE" ] && [ ! -z "$REMOTE" ]; then
+            echo "=========================================="
+            echo "   Mendeteksi VERSI BARU di GitHub!      "
+            echo "      Sedang mengunduh pembaruan...      "
+            echo "=========================================="
+            
+            # Menarik update terbaru
+            git pull >/dev/null 2>&1
+            
+            # Berikan izin eksekusi ulang pada semua script
+            chmod +x "$DIR/setup.sh" "$DIR/modules"/*.sh 2>/dev/null
+            
+            echo "✔ Update berhasil diterapkan!"
+            echo "Memulai ulang script dengan versi terbaru..."
+            sleep 1.5
+            
+            # Memulai ulang dirinya sendiri (restart script) menggunakan kode yang baru
+            exec "$DIR/setup.sh" "$@"
+            exit 0
+        fi
+    fi
+}
+
+# Jalankan pengecekan update sebelum menampilkan menu utama
+check_for_updates
+
+# --- SELESAI BAGIAN AUTO-UPDATE ---
+# ... (lanjutkan ke fungsi run_module, sub-menu, dan menu utama seperti sebelumnya) ...
+
 # Fungsi helper untuk menjalankan modul dengan aman
 run_module() {
     local module_name="$1"
