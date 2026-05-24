@@ -19,7 +19,15 @@ fi
 # 2. Instalasi Nginx
 sudo apt install nginx -y
 
-# 3. ANTISIPASI ERROR IPv6: Periksa apakah sistem VPS mendukung IPv6
+# 3. PENGAMAN SNIPPET KOSONG (PENTING!)
+# Membuat folder snippet dan file dummy agar jika ada konfigurasi vhost lama yang merujuk ke sini, Nginx tidak crash.
+sudo mkdir -p /etc/nginx/snippets
+if [ ! -f /etc/nginx/snippets/security-hardened.conf ]; then
+    sudo touch /etc/nginx/snippets/security-hardened.conf
+    echo "✔ Membuat file pengaman kosong di /etc/nginx/snippets/security-hardened.conf"
+fi
+
+# 4. ANTISIPASI ERROR IPv6: Periksa apakah sistem VPS mendukung IPv6
 # Jika tidak mendukung, kita beri komentar (#) pada pengaturan listen IPv6 Nginx agar tidak crash
 if [ ! -f /proc/net/if_inet6 ]; then
     echo "⚠️ Sistem Anda tidak mendukung IPv6 (dinonaktifkan). Menyesuaikan konfigurasi default Nginx..."
@@ -28,7 +36,7 @@ if [ ! -f /proc/net/if_inet6 ]; then
     fi
 fi
 
-# 4. Verifikasi konfigurasi sebelum mencoba menjalankan service
+# 5. Verifikasi konfigurasi sebelum mencoba menjalankan service
 echo "Memverifikasi konfigurasi Nginx..."
 if sudo nginx -t; then
     echo "✔ Konfigurasi valid. Mengaktifkan service Nginx..."
@@ -38,7 +46,7 @@ else
     echo "❌ Konfigurasi Nginx bermasalah saat divalidasi!"
 fi
 
-# 5. Verifikasi Akhir & Debugging Otomatis jika gagal
+# 6. Verifikasi Akhir & Debugging Otomatis jika gagal
 if systemctl is-active --quiet nginx; then
     echo "=========================================="
     echo "✔ SUKSES: Nginx berhasil berjalan dengan baik!"
