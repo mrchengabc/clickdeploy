@@ -83,8 +83,9 @@ menu_server_setup() {
         echo "1) Install Nginx Web Server"
         echo "2) Aktifkan Firewall & Keamanan (UFW & Fail2Ban)"
         echo "3) Ubah Port SSH dari 22 ke 2222"
-        echo "4) Hardening Nginx (XML-RPC Block & Security Headers)"
-        echo "5) Kembali ke Menu Utama"
+		echo "4) Tambah / Atur SWAP File"
+        echo "5) Hardening Nginx (XML-RPC Block & Security Headers)"
+        echo "6) Kembali ke Menu Utama"
         echo "=========================================="
         read -p "Pilih opsi [1-5]: " sub_opt
         
@@ -92,8 +93,9 @@ menu_server_setup() {
             1) run_module "install_nginx.sh" ;;
             2) run_module "secure_vps.sh" ;;
             3) run_module "change_ssh_port.sh" ;;
-            4) run_module "security_hardening.sh" ;;
-            5) break ;;
+			4) run_module "create_swap.sh" ;;  
+            5) run_module "security_hardening.sh" ;;
+            6) break ;;
             *) echo "Pilihan tidak valid!"; sleep 1 ;;
         esac
     done
