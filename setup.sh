@@ -4,40 +4,49 @@
 # Mengambil lokasi absolut dari folder tempat script ini berada
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
+
 # ==========================================
-# FUNGSI CEK UPDATE OTOMATIS DARI GITHUB
+# FUNGSI CEK UPDATE OTOMATIS DARI GITHUB (VERSI AMAN)
 # ==========================================
 check_for_updates() {
-    # Pastikan folder ini merupakan repositori git
     if [ -d "$DIR/.git" ]; then
         echo "Memeriksa pembaruan dari GitHub..."
         
-        # Mengambil informasi perubahan terbaru dari GitHub secara senyap
+        # Mengambil informasi perubahan terbaru secara senyap
         git fetch >/dev/null 2>&1
         
         # Mendapatkan ID commit lokal dan remote
-        LOCAL=$(git rev-parse @ 2>/dev/null)
+        LOCAL=$(git rev-parse HEAD 2>/dev/null)
         REMOTE=$(git rev-parse @{u} 2>/dev/null)
         
+        # Jika versi berbeda dan remote tidak kosong
         if [ "$LOCAL" != "$REMOTE" ] && [ ! -z "$REMOTE" ]; then
             echo "=========================================="
             echo "   Mendeteksi VERSI BARU di GitHub!      "
             echo "      Sedang mengunduh pembaruan...      "
             echo "=========================================="
             
-            # Menarik update terbaru
-            git pull >/dev/null 2>&1
+            # SOLUSI: Reset paksa semua perubahan lokal sebelum pull untuk menghindari konflik
+            git reset --hard HEAD >/dev/null 2>&1
             
-            # Berikan izin eksekusi ulang pada semua script
-            chmod +x "$DIR/setup.sh" "$DIR/modules"/*.sh 2>/dev/null
-            
-            echo "✔ Update berhasil diterapkan!"
-            echo "Memulai ulang script dengan versi terbaru..."
-            sleep 1.5
-            
-            # Memulai ulang dirinya sendiri (restart script) menggunakan kode yang baru
-            exec "$DIR/setup.sh" "$@"
-            exit 0
+            # Tarik pembaruan dari branch yang aktif saat ini
+            CURRENT_BRANCH=$(git branch --show-current)
+            if git pull origin "$CURRENT_BRANCH" >/dev/null 2>&1; then
+                # Berikan kembali izin eksekusi
+                chmod +x "$DIR/setup.sh" "$DIR/modules"/*.sh 2>/dev/null
+                
+                echo "✔ Update berhasil diterapkan!"
+                echo "Memulai ulang script dengan versi terbaru..."
+                sleep 1.5
+                
+                # Memulai ulang script
+                exec "$DIR/setup.sh" "$@"
+                exit 0
+            else
+                echo "❌ Gagal menarik pembaruan otomatis dari GitHub."
+                echo "Melanjutkan menggunakan versi lokal yang ada..."
+                sleep 2
+            fi
         fi
     fi
 }
