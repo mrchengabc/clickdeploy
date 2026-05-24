@@ -19,7 +19,7 @@ fi
 # 2. Instalasi Nginx
 sudo apt install nginx -y
 
-# 3. PENGAMAN SNIPPET KOSONG (PENTING!)
+# 3. PENGAMAN SNIPPET KOSONG
 # Membuat folder snippet dan file dummy agar jika ada konfigurasi vhost lama yang merujuk ke sini, Nginx tidak crash.
 sudo mkdir -p /etc/nginx/snippets
 if [ ! -f /etc/nginx/snippets/security-hardened.conf ]; then
@@ -36,7 +36,17 @@ if [ ! -f /proc/net/if_inet6 ]; then
     fi
 fi
 
-# 5. Verifikasi konfigurasi sebelum mencoba menjalankan service
+# 5. OTOMATIS BUKA FIREWALL (UFW) UNTUK PORT WEB (PENTING!)
+# Jika UFW terpasang di sistem, script akan otomatis mengizinkan akses ke port 80 dan 443
+if command -v ufw >/dev/null 2>&1; then
+    echo "Mendeteksi UFW terpasang. Otomatis membuka port 80 (HTTP) & 443 (HTTPS)..."
+    sudo ufw allow 80/tcp
+    sudo ufw allow 443/tcp
+    sudo ufw reload
+    echo "✔ Port 80 dan 443 berhasil dibuka di firewall UFW."
+fi
+
+# 6. Verifikasi konfigurasi sebelum mencoba menjalankan service
 echo "Memverifikasi konfigurasi Nginx..."
 if sudo nginx -t; then
     echo "✔ Konfigurasi valid. Mengaktifkan service Nginx..."
@@ -46,7 +56,7 @@ else
     echo "❌ Konfigurasi Nginx bermasalah saat divalidasi!"
 fi
 
-# 6. Verifikasi Akhir & Debugging Otomatis jika gagal
+# 7. Verifikasi Akhir & Debugging Otomatis jika gagal
 if systemctl is-active --quiet nginx; then
     echo "=========================================="
     echo "✔ SUKSES: Nginx berhasil berjalan dengan baik!"
