@@ -1,3 +1,5 @@
+== Sudah di test di DEBIAN 12 == di luar Debian belum pernah test ==
+
 Cara menjalankan di vps :
 
 # 1. Update sistem dan pastikan Git terinstal di VPS baru Anda
